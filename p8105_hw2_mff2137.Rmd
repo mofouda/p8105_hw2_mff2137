@@ -8,6 +8,8 @@ output: github_document
 knitr::opts_chunk$set(collapse = TRUE, message = FALSE)
 ```
 
+# Load libraries 
+
 ```{r load_libraries}
 library(tidyverse)
 library(readxl)
@@ -16,12 +18,11 @@ library(readxl)
 # Problem 1
 
 In this step, we import and clean the `NYC_Transit_Subway_Entrance_And_Exit_Data.csv`
-dataset. We select the variables of interest. We change the variables `route` to 
-character for consistency, and replace the value for the `entry` column from 
-(yes/no) to logical. As it stands the dataset has 19 columns and 1868 rows. The 
+dataset starting withselecting the variables of interest; then change the variables
+`route` to character for consistency and replace the value for the `entry` column 
+from (yes/no) to logical. As it stands, the dataset has 19 columns and 1868 rows. The 
 data is not completely tidy yet. The `route` columns can be separated into two 
-varibles: route name  and the route number to change the dataset from wide to long
-format. 
+varibles: route name  and route number changing the dataset from wide to long format. 
 
 ```{r manipulate_data}
 nyc_subway <-
@@ -45,9 +46,10 @@ nyc_subway %>%
     select(line, station_name) %>% 
     distinct()
 ```
+
 Next code chunk filters out the ADA compliant stations using`ada` column keeping
-the `line` and `station_name` and using the `distint()`function again to 
-find distinct combinations. The result is 84.
+the `line` and `station_name` and using the `distint()`function again to find the
+distinct combinations. The result is 84.
 
 ```{r}
 nyc_subway %>% 
@@ -56,9 +58,9 @@ nyc_subway %>%
     distinct()
 ```
 
-The following code chunk to calculate the proportion of station entrances/exists 
+The following code chunk will calculate the proportion of station entrances/exists 
 without vending allow entrance. Filtering by `vending` then using `pull` function 
-with `entry` to coerce the character variable nto numeric. The proportion is 37.7 %.
+with `entry` to coerce the character variable into numeric. The proportion is 37.7 %.
 
 ```{r}
 nyc_subway %>% 
@@ -67,9 +69,9 @@ nyc_subway %>%
     mean
 ```
 
-Finally we reformat the data so that route number and route name are distinct
+Finally, we reformat the data so that route number and route name are distinct
 variables using `pivot_longer()` then use `distint()` to find the unique combination
-of stations serve the A train. The result is 60 stations.
+of stations serving the A train. The result is 60 stations.
 
 ```{r}
 nyc_subway %>% 
@@ -82,8 +84,8 @@ nyc_subway %>%
     distinct()
 ```
 
-This code chunk is similar, add another filter to find the number of ADA compliant 
-stations serve the A train. The result is 17 stations. 
+This code chunk is similar, adding another filter to find the number of ADA compliant 
+stations serving the A train. The result is 17 stations. 
 
 ```{r}
 nyc_subway %>% 
@@ -98,11 +100,11 @@ nyc_subway %>%
 
 # Problem 2
 
-First code chunk to reading the `Trash Wheel Collecion Data` dataset, specifying
+First code chunk to reading the `Trash Wheel Collecion Data` dataset, specifying the
 `Mr. Trash Wheel` sheet. This will also omit the first row which contains a graphic,
 the last row which contains the sums, the last two colums that contains missing
 data. Additionally, this step cleans the variable names making it more reasonable
-to work with and rounds the number of sports balls to the nearest integer then 
+to work with and rounds the number of sports balls to the nearest integer; then 
 converts the result to an integer variable. 
 
 
@@ -119,8 +121,8 @@ mr_wheel <-
     
 ```
 
-The next code chunk will similar process to import, clean, and organize the data
-for `Professor Trash Wheel` sheet. 
+The next code chunk will use a similar process to import, clean, and organize the
+ data for the `Professor Trash Wheel` sheet. 
 
 ```{r}
 prof_wheel <- 
@@ -140,14 +142,15 @@ datasets to produce a single tidy dataset.
 trash_wheels <- left_join(mr_wheel, prof_wheel)
 ```
 
-The resulting `Trash Wheels` dataset has `r nrow(trash_wheels)` observations. It 
-includes information on the dumpter number, date of collection, amount of total 
-litter collected including `weight_tons` and `volume_cubic_yards`.Some of the 
-litter type variables include `plastic_bottles`, `cigarette_butts` and `homes_powered`
-through incineration of the litter. For available data, `Professor Trash Wheel`
-collected `r sum(prof_wheel$weight_tons)` tons of liter in total. Also `Mr. Trash Wheel`
-collected a total of `r sum(mr_wheel[which(mr_wheel$year == 2020), "sports_balls"])`.
- sports balls in the year 2020.
+The resulting `Trash Wheels` dataset has `r nrow(trash_wheels)` observations and 
+`r ncol(trash_wheels)`variables. It includes information on the dumpster number, 
+date of collection, amount of total litter collected including `weight_tons` and
+`volume_cubic_yards`. Some of the litter type variables include `plastic_bottles`,
+`cigarette_butts` and `homes_powered` through incineration of the litter. For 
+available data, `Professor Trash Wheel`collected `r sum(prof_wheel$weight_tons)`
+tons of liter in total. Also `Mr. Trash Wheel`collected a total of 
+`r sum(mr_wheel[which(mr_wheel$year == 2020), "sports_balls"])`sports balls in 
+the year 2020.
  
 # Probelm 3
 
@@ -165,8 +168,8 @@ pols<-
     select(-day, -prez_gop, -prez_dem)
 ```
 
- Second code chunck cleans the data in `snp.csv` dataset using a similar process
- to the above.
+Second code chunk cleans the data in `snp.csv` dataset using a similar process
+to the above.
  
 ```{r}
 snp<-
@@ -180,8 +183,8 @@ snp<-
     
 ```
  
-Third code chunck tidy the `unemployment.csv` data so that it can be merged with
-the previous datasets. This requires switching the from "wide" to "long" format. 
+Third code chunk will tidy the `unemployment.csv` data so that it can be merged with
+the previous datasets. This requires switching it from "wide" to "long" format. 
 
 ```{r}
 unemployment <-
@@ -202,21 +205,20 @@ pols_snp <- left_join(pols, snp)
 all_data <- left_join(pols_snp, unemployment)
 ```
 
-The `pols_months` dataset related to the number of politicians who are democratic
-or republican at anytime. The resulting `pols` dataset has
-`r nrow(pols)` observations and `r ncol(pols)` variables relating to the period
- between 1947-2015. Some of the key variables include `president` as `dem` or `gop`,
- the `year`, and the number of governors and senates bsed on their part affiliation.
- The `snp` dataset started with 787 observations and 2 variables wih information
- related to S&P stock markt index by date. The resulting `snp` dataset has 
- `r nrow(snp)` observations and `r ncol(snp)` variables representing information 
- on s&P with the key variable of `close` showing the closing value of S&P at any 
- given `year`in the period 1950-2015. The `unemployment` dataset started with 
- 68 observations of 13 variables. The resulting `unemployment` dataset has 
- `r nrow(unemployment)`observations and `r ncol(unemployment)` variables as it was 
- switched from the wide to the long format. It contains information on the percentages
- of unemployment `unempl_perc` of any give `month` in any given `year` in the 
- period 1948-2015.Combined all 3 into one `all_data`final datasets that has 
- `r nrow(all_data)` observations and `r ncol(all_data)` variables representing the 
- period 1947-2015
+The `pols_months` dataset is related to the number of politicians who are democratic
+or republican at anytime. The resulting `pols` dataset has`r nrow(pols)` observations
+and `r ncol(pols)` variables relating to the period between 1947-2015. Some of the
+key variables include `president` as `dem` or `gop`, the `year`, and the number of
+governors and senators based on their party affiliation. The `snp` dataset started
+with 787 observations and 2 variables with information related to S&P stock market
+index by date. The resulting `snp` dataset has `r nrow(snp)` observations and 
+`r ncol(snp)` variables representing information on S&P with the key variable of
+`close` showing the closing value of S&P at any given `year`in the period 1950-2015.
+The `unemployment` dataset started with 68 observations and 13 variables. The 
+resulting `unemployment` dataset has `r nrow(unemployment)`observations and 
+`r ncol(unemployment)` variables as it was switched from the wide to the long format.
+It contains information on the percentages of unemployment `unempl_perc` in any given
+`month` in any given `year` in the period 1948-2015. Combined all 3 into one `all_data`
+final datasets that has `r nrow(all_data)` observations and `r ncol(all_data)` variables
+representing the period 1947-2015.
  
