@@ -1,0 +1,209 @@
+---
+title: "p8105_hw2_mff2137"
+author: "Mohammad Fouda"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, message = FALSE)
+```
+
+```{r load_libraries}
+library(tidyverse)
+library(readxl)
+```
+
+# Problem 1
+
+In this step, we import and clean the `NYC_Transit_Subway_Entrance_And_Exit_Data.csv`
+dataset. We select the variables of interest. We change the variables `route` to 
+character for consistency, and replace the value for the `entry` column from 
+(yes/no) to logical. As it stands the dataset has 19 columns and 1868 rows. The 
+data is not completely tidy yet. The `route` columns can be separated into two 
+varibles: route name  and the route number to change the dataset from wide to long
+format. 
+
+```{r manipulate_data}
+nyc_subway <-
+    read_csv(
+        "data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv", 
+        col_types = c(Route8 = "c", Route9 = "c", Route10 = "c", Route11 = "c")) %>% 
+    janitor::clean_names() %>% 
+    select(
+        line, station_name, station_latitude, station_longitude, 
+        starts_with("route"), entrance_type, entry, vending, ada) %>% 
+    mutate(entry = recode(entry, "YES" = TRUE, "NO" = FALSE))
+```
+
+Since the distinct stations are a combination of both name and line, the following
+code chunk will select the disinct stations using the variables `station_name` and 
+`line`. The resulting number of rows is equal to the number of distinct stations
+in the nyc subway system which is 465. 
+
+```{r}
+nyc_subway %>% 
+    select(line, station_name) %>% 
+    distinct()
+```
+Next code chunk filters out the ADA compliant stations using`ada` column keeping
+the `line` and `station_name` and using the `distint()`function again to 
+find distinct combinations. The result is 84.
+
+```{r}
+nyc_subway %>% 
+    filter(ada == TRUE) %>% 
+    select(line, station_name) %>% 
+    distinct()
+```
+
+The following code chunk to calculate the proportion of station entrances/exists 
+without vending allow entrance. Filtering by `vending` then using `pull` function 
+with `entry` to coerce the character variable nto numeric. The proportion is 37.7 %.
+
+```{r}
+nyc_subway %>% 
+    filter(vending == "NO") %>% 
+    pull(entry) %>% 
+    mean
+```
+
+Finally we reformat the data so that route number and route name are distinct
+variables using `pivot_longer()` then use `distint()` to find the unique combination
+of stations serve the A train. The result is 60 stations.
+
+```{r}
+nyc_subway %>% 
+    pivot_longer(
+         route1:route11,
+        names_to = "route_number",
+        values_to = "route_name") %>%
+    filter(route_name == "A") %>% 
+    select(line, station_name) %>% 
+    distinct()
+```
+
+This code chunk is similar, add another filter to find the number of ADA compliant 
+stations serve the A train. The result is 17 stations. 
+
+```{r}
+nyc_subway %>% 
+    pivot_longer(
+         route1:route11,
+        names_to = "route_number",
+        values_to = "route_name") %>%
+    filter(route_name == "A" & ada == TRUE) %>% 
+    select(line, station_name) %>% 
+    distinct()
+```
+
+# Problem 2
+
+First code chunk to reading the `Trash Wheel Collecion Data` dataset, specifying
+`Mr. Trash Wheel` sheet. This will also omit the first row which contains a graphic,
+the last row which contains the sums, the last two colums that contains missing
+data. Additionally, this step cleans the variable names making it more reasonable
+to work with and rounds the number of sports balls to the nearest integer then 
+converts the result to an integer variable. 
+
+
+```{r}
+mr_wheel <- 
+    read_excel("data/Trash Wheel Collection Data.xlsx", sheet = "Mr. Trash Wheel",
+                col_names = TRUE, skip = 1, n_max = 547) %>% 
+    janitor::clean_names() %>% 
+    select(dumpster:homes_powered) %>% 
+    mutate(
+        sports_balls = as.integer(ceiling(sports_balls)),
+        homes_log = homes_powered > 0,
+        ) 
+    
+```
+
+The next code chunk will similar process to import, clean, and organize the data
+for `Professor Trash Wheel` sheet. 
+
+```{r}
+prof_wheel <- 
+    read_excel("data/Trash Wheel Collection Data.xlsx", sheet = "Professor Trash Wheel",
+                col_names = TRUE, skip = 1, n_max = 94) %>% 
+    janitor::clean_names() %>% 
+    mutate(
+        volume_log = volume_cubic_yards < 15,
+        year = as.character(year)
+        ) 
+```
+
+The following code will combine both `Mr. Trash Wheel` and `Professor Trash Wheel`
+datasets to produce a single tidy dataset.
+
+```{r}
+trash_wheels <- left_join(mr_wheel, prof_wheel)
+```
+
+The resulting `Trash Wheels` dataset has `r nrow(trash_wheels)` observations. It 
+includes information on the dumpter number, date of collection, amount of total 
+litter collected including `weight_tons` and `volume_cubic_yards`.Some of the 
+litter type variables include `plastic_bottles`, `cigarette_butts` and `homes_powered`
+through incineration of the litter. For available data, `Professor Trash Wheel`
+collected `r sum(prof_wheel$weight_tons)` tons of liter in total. Also `Mr. Trash Wheel`
+collected a total of `r sum(mr_wheel[which(mr_wheel$year == 2020), "sports_balls"])`.
+ sports balls in the year 2020.
+ 
+# Probelm 3
+
+First code chunks reads in and clean the data in `pols-month.csv`.
+
+```{r}
+pols<-
+    read_csv("data/pols-month.csv") %>% 
+    separate(mon, sep = "-", into = c("year", "month", "day")) %>% 
+    janitor::clean_names() %>% 
+    mutate(across(.col = (c("year", "month")), as.integer)) %>% 
+    mutate(
+        month = month.abb[month],
+        president = case_when(prez_gop == 1 ~ "gop", prez_dem==1 ~ "dem")) %>% 
+    select(-day, -prez_gop, -prez_dem)
+```
+
+ Second code chunck cleans the data in `snp.csv` dataset using a similar process
+ to the above.
+ 
+```{r}
+snp<-
+    read_csv("data/snp.csv") %>%
+    separate(date, sep = "/",  into = c("month", "day", "year")) %>% 
+    mutate(across(.col = (c("year", "month")), as.integer)) %>%
+    mutate(
+        month = month.abb[month],
+        year = if_else(year < 23, 2000 + year, 1900 + year)) %>% 
+    select(-day)
+    
+```
+ 
+Third code chunck tidy the `unemployment.csv` data so that it can be merged with
+the previous datasets. This requires switching the from "wide" to "long" format. 
+
+```{r}
+unemployment <-
+    read_csv("data/unemployment.csv") %>% 
+    janitor::clean_names() %>% 
+    pivot_longer(
+        jan:dec,
+        names_to = "month",
+        values_to = "unempl_perc"
+    )
+```
+
+Next code chunk will join the datasets together to produce one tidy dataset by 
+merging `snp` into `pols`, and merging `unemployment` into the result.
+
+```{r}
+pols_snp <- left_join(pols, snp)
+all_data <- left_join(pols_snp, unemployment)
+```
+
+The `pols` dataset has `r nrow(pols)` observations and `r ncol(pols)` variable 
+related to the number of politicians who are democratic or republican at anytime 
+in the period 1947-2015. 
+
+ 
